@@ -18,6 +18,6 @@ def create_app():
     app = FastAPI(title=settings.APP_NAME , lifespan=lifespan)
     @app.get('/health')
     async def health(): # type: ignore
-        return {'status':'ok'}
+        return {'status':'ok' }
     return app
 app = create_app()
