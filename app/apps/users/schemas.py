@@ -39,5 +39,5 @@ class UserRead(BaseModel):
     created_at:datetime|None = None
     
 class UserLogin(BaseModel):
-    username:str = Field(... , min_length=3 , max_length=120)
+    email:str = Field(... , min_length=3 , max_length=120)
     password:str = Field(... , min_length=8 , max_length=128)
