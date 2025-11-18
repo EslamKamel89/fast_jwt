@@ -11,8 +11,6 @@ from app.db.session import get_session
 router = APIRouter(prefix='/auth' , tags=['auth'])
 
 
-
-
 @router.post('/token' , response_model=TokenResponse , status_code=status.HTTP_200_OK)
 async def login(payload:UserLogin , session:AsyncSession=Depends(get_session)):
     repo = UserRepository(session)
