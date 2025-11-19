@@ -8,6 +8,7 @@ oauth2_schema = OAuth2PasswordBearer(tokenUrl='/auth/token')
 class CurrentUser(BaseModel) :
     user_id:int
     role:str
+    
 async def get_current_user(token:str=Depends(oauth2_schema))->CurrentUser :
     try:
         payload = Security.decode_token(token)
