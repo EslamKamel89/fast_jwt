@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.apps.auth.models import RefreshToken
 from app.apps.auth.validation import RefreshAccessTokenResponse, TokenResponse
-from app.apps.users.models import RefreshToken
 from app.apps.users.repository import UserRepository
 from app.apps.users.schemas import UserLogin
 from app.core.security import Security

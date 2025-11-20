@@ -1,10 +1,17 @@
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.core.config import settings
+from app.db.base import Base
 
+try:
+    import app.apps.auth.models
+    import app.apps.users.models
+except Exception as e:
+    raise e
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -18,13 +25,24 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
+# target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+def _get_sync_url()->str|None:
+    ini_url = config.get_main_option('sqlalchemy.url')
+    if ini_url : 
+        return ini_url
+    async_url:str|None = getattr(settings,'ASYNC_DATABASE_URL' , None)
+    if not async_url:
+        return None 
+    if "+aiomysql" in async_url:
+        return async_url.replace("+aiomysql" , "+pymysql")
+    return async_url
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -57,11 +75,20 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    ini_section = config.get_section(config.config_ini_section, {})
+    ini_url = config.get_main_option('sqlalchemy.url')
+    if ini_url:
+        connectable = engine_from_config(
+            ini_section,
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+    else :
+        sync_url = _get_sync_url()
+        if not sync_url : 
+            raise RuntimeError( "No DB URL found for online mode (set sqlalchemy.url in alembic.ini or ASYNC_DATABASE_URL in settings)")
+        from sqlalchemy import create_engine
+        connectable = create_engine(sync_url , poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(

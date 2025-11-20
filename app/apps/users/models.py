@@ -13,9 +13,3 @@ class User(Base , TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255) , nullable=False)
     role:Mapped[str] = mapped_column(String(50) , server_default='user' , index=True )
     
-class RefreshToken(Base ,TimestampMixin):
-    __tablename__ = 'refresh_tokens'
-    id:Mapped[int] = mapped_column(primary_key=True , autoincrement=True)
-    user_id:Mapped[int] = mapped_column(ForeignKey('users.id' , ondelete='CASCADE') ,nullable=True )
-    token:Mapped[str] = mapped_column(String(512) , nullable=False , index=True)
-    revoked:Mapped[bool] = mapped_column(Boolean , nullable=False , server_default=text("0"))
