@@ -20,7 +20,7 @@ class RefreshTokenRepository():
         
     
     async def get_by_token(self , token:str)->Optional[RefreshToken]:
-        stmt = select(RefreshToken).where(RefreshToken.token == token)
+        stmt = select(RefreshToken).where(RefreshToken.token == token )
         r = await self.session.execute(stmt)
         return r.scalar_one_or_none()
             

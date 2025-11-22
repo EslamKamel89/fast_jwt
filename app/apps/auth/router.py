@@ -1,10 +1,11 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.apps.auth.models import RefreshToken
+from app.apps.auth.repository import RefreshTokenRepository
 from app.apps.auth.validation import RefreshAccessTokenResponse, TokenResponse
 from app.apps.users.repository import UserRepository
 from app.apps.users.schemas import UserLogin
@@ -22,25 +23,35 @@ async def login(payload:UserLogin , session:AsyncSession=Depends(get_session)):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED , detail='Invalid credentials')
     access = Security.create_access_token(str(user.id) , extra={'role':user.role})
     refresh = Security.create_refresh_token(str(user.id))
-    refresh_model = RefreshToken(user_id=user.id , token=refresh)
-    session.add(refresh_model)
-    await session.commit()
+    rt_repo = RefreshTokenRepository(session)
+    await rt_repo.create_token(user.id , refresh)
     return TokenResponse(access_token=access , refresh_token=refresh  , token_type='bearer')
     
     
-@router.post('/refresh')
-async def refresh(refresh_token:str , session:AsyncSession=Depends(get_session)):
+@router.post('/refresh' , response_model=TokenResponse)
+async def refresh(refresh_token:str = Body(..., embed=True) , session:AsyncSession=Depends(get_session)):
     try:
         payload = Security.decode_token(refresh_token)
     except Exception as e:
         raise e
-    q = select(RefreshToken).where(RefreshToken.token == refresh_token , RefreshToken.revoked == False)
-    res = await session.execute(q)
-    row = res.scalar_one_or_none()
-    if row is None : 
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED , detail="Invalid token")
     user_id:Any = payload.get('sub')
-    access = Security.create_access_token(user_id)
-    return RefreshAccessTokenResponse(access_token=access , token_type='bearer')
+    if user_id is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED , detail="Invalid token")
+    rt_repo = RefreshTokenRepository(session)
+    existing = await rt_repo.get_by_token(refresh_token)
+    if existing is None  or existing.revoked: 
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED , detail="Refresh token is invalid or revoked")
+    await rt_repo.revoke(existing.id)
+    new_access = Security.create_access_token(str(user_id))
+    new_refresh = Security.create_refresh_token(str(user_id))
+    await rt_repo.create_token(int(user_id) , new_refresh)
+    return TokenResponse(access_token=new_access , token_type='bearer' , refresh_token=new_refresh)
 
-    
+@router.post('/logout' , status_code=status.HTTP_204_NO_CONTENT)
+async def logout(refresh_token:str = Body(...,embed=True) , session:AsyncSession=Depends(get_session)):
+    rt_repo = RefreshTokenRepository(session)
+    rec = await rt_repo.get_by_token(refresh_token)
+    if rec is None : 
+        return None 
+    await rt_repo.revoke(rec.id)
+    return None
