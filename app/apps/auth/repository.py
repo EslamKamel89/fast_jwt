@@ -1,5 +1,6 @@
 from typing import Optional
 
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.apps.auth.models import RefreshToken
@@ -10,13 +11,25 @@ class RefreshTokenRepository():
         self.session = session
         
     async def create_token(self , user_id:int  , token:str)->RefreshToken:
-        pass
+        rt = RefreshToken(user_id=user_id , token=token)
+        self.session.add(rt)
+        await self.session.flush()
+        await self.session.refresh(rt)
+        await self.session.commit()
+        return rt
+        
     
     async def get_by_token(self , token:str)->Optional[RefreshToken]:
-        pass
-    
+        stmt = select(RefreshToken).where(RefreshToken.token == token)
+        r = await self.session.execute(stmt)
+        return r.scalar_one_or_none()
+            
     async def revoke(self , token_id:int)->None:
-        pass
+        stmt = update(RefreshToken).where(RefreshToken.id == token_id).values(revoked=True)
+        await self.session.execute(stmt)
+        await self.session.commit()
     
     async def revoke_all_for_user(self , user_id:int)->None:
-        pass
+        stmt = update(RefreshToken).where(RefreshToken.user_id == user_id).values(revoked=True)
+        await self.session.execute(stmt)
+        await self.session.commit()
