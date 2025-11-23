@@ -15,7 +15,7 @@ class UserRepository:
         user = User(
             name=name , 
             email=email.lower().strip() , 
-            password=Security.hash_password(password) ,
+            password_hash=Security.hash_password(password) ,
             role=role ,
             )
         self.session.add(user)
