@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.apps.users.models import User
 from app.db.base import Base, TimestampMixin
 
 product_category = Table(
@@ -18,6 +19,24 @@ class Product(Base , TimestampMixin):
     categories:Mapped[list["Category"]] = relationship('Category' , secondary='product_categories' , back_populates='categories')
 
 class Category(Base,TimestampMixin) :
+    __tablename__='categories'
     id:Mapped[int]  = mapped_column(primary_key=True , autoincrement=True)
     name:Mapped[str] = mapped_column(String(100) , unique=True , nullable=False , index=True)
     categories:Mapped[list[Product]] = relationship(Product , secondary='product_categories' , back_populates='products')
+    
+class Order(Base , TimestampMixin):
+    __tablename__='orders'
+    id:Mapped[int] = mapped_column(primary_key=True , autoincrement=True)
+    user_id:Mapped[int] = mapped_column(Integer , ForeignKey('users.id' , ondelete='SET NULL') , nullable=True)
+    user :Mapped[User] = relationship(User , back_populates='orders' )
+    items: Mapped[list['OrderItem']] = relationship('OrderItem' , back_populates='order')
+    
+class OrderItem(Base ,TimestampMixin):
+    __tablename__='order_items'
+    id:Mapped[int] = mapped_column(primary_key=True , autoincrement=True)
+    order_id:Mapped[int] = mapped_column(Integer , ForeignKey('orders.id' , ondelete='CASCADE'), nullable=False)
+    product_id:Mapped[int] = mapped_column(Integer , ForeignKey('products.id' , ondelete='SET NULL'))
+    quantity:Mapped[int] = mapped_column(Integer , nullable=False, default=1)
+    unit_price:Mapped[float] = mapped_column(Float , nullable=False , default=0.0)
+    order:Mapped[Order] = relationship(Order , back_populates='items')
+    product:Mapped[Product] = relationship(Product)

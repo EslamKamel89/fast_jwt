@@ -1,6 +1,7 @@
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.apps.sandbox.models import Order
 from app.db.base import Base, TimestampMixin
 
 
@@ -12,4 +13,5 @@ class User(Base , TimestampMixin):
     name:Mapped[str] = mapped_column(String(100) , index=True , nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255) , nullable=False)
     role:Mapped[str] = mapped_column(String(50) , server_default='user' , index=True )
+    orders:Mapped[list[Order]] = relationship(Order  , back_populates='user')
     
