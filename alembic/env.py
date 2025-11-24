@@ -9,6 +9,7 @@ from app.db.base import Base
 
 try:
     import app.apps.auth.models
+    import app.apps.sandbox.models
     import app.apps.users.models
 except Exception as e:
     raise e

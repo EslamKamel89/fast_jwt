@@ -32,7 +32,7 @@ class Order(Base , TimestampMixin):
     __tablename__='orders'
     id:Mapped[int] = mapped_column(primary_key=True , autoincrement=True)
     user_id:Mapped[int] = mapped_column(Integer , ForeignKey('users.id' , ondelete='SET NULL') , nullable=True)
-    user :Mapped["User"]|None = relationship("User" , back_populates='orders' )
+    user :Mapped["User"] = relationship("User" , back_populates='orders' )
     items: Mapped[list['OrderItem']] = relationship('OrderItem' , back_populates='order' , cascade="all, delete-orphan")
     
 class OrderItem(Base ,TimestampMixin):
