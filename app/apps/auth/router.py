@@ -1,12 +1,10 @@
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.apps.auth.models import RefreshToken
 from app.apps.auth.repository import RefreshTokenRepository
-from app.apps.auth.validation import RefreshAccessTokenResponse, TokenResponse
+from app.apps.auth.validation import TokenResponse
 from app.apps.users.repository import UserRepository
 from app.apps.users.schemas import UserLogin
 from app.core.security import Security
