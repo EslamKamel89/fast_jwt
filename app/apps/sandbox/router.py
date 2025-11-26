@@ -1,13 +1,13 @@
 from typing import Sequence
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.apps.sandbox.models import Category, Product
 from app.db.session import get_session
 
-router = APIRouter(prefix='/sandbox' , tags=['sandbox'])
+router = APIRouter(prefix='/sandbox/lesson1' , tags=['sandbox'])
 
 @router.get('/lesson1/ex1')
 async def sandbox(session:AsyncSession=Depends(get_session)): 
@@ -83,3 +83,59 @@ async def sandbox7(session:AsyncSession=Depends(get_session)):
     res = await session.execute(stmt)
     count = res.scalar_one()
     return {'count':count}
+
+@router.get('/lesson2/ex1')
+async def sandbox8(session:AsyncSession=Depends(get_session)):
+    stmt1 = (
+        select(Product).where(Product.name=='Smart Watch')
+    ) 
+    stmt2 = (
+        select(Product).filter_by(name='Smart Watch')
+    )
+    res = await session.execute(stmt2)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lesson2/ex2')
+async def sandbox9(session:AsyncSession=Depends(get_session)):
+    stmt = (
+        select(Product)
+        .where(Product.price > 20)
+        .where(Product.price < 50)
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lesson2/ex3')
+async def sandbox10(session:AsyncSession=Depends(get_session)):
+    stmt = (
+        select(Product)
+        .where(Product.price > 20 , Product.price < 50)
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+
+@router.get('/lesson2/ex4')
+async def sandbox11(session:AsyncSession=Depends(get_session)):
+    stmt = (
+        select(Product)
+        .where(and_(Product.price > 20 , Product.price < 50))
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lesson2/ex5')
+async def sandbox12(session:AsyncSession=Depends(get_session)):
+    stmt = (
+        select(Product)
+        .where(or_(Product.name.ilike("%laptop%") , Product.name.ilike('%galaxy%')))
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+
