@@ -1,6 +1,6 @@
-from typing import Sequence
+from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -138,4 +138,80 @@ async def sandbox12(session:AsyncSession=Depends(get_session)):
     products = res.scalars().all()
     return products
 
+@router.get('/lesson2/ex6')
+async def sandbox13(session:AsyncSession=Depends(get_session)):
+    stmt = (
+        select(Product).where(Product.name.ilike('%LAP%'))
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lesson2/ex7')
+async def sandbox14(session:AsyncSession=Depends(get_session)):
+    stmt = (
+        select(Product).order_by(Product.name.desc() , Product.price.desc())
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lesson2/ex8')
+async def sandbox15(
+    session:AsyncSession=Depends(get_session) , 
+    page:Annotated[int , Query(min=1)] = 1 , 
+    limit:Annotated[int , Query(min=1 , max=100)] = 10):
+    offset = (page -1) * limit
+    stmt = (
+        select(Product).offset(offset).limit(limit)
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lessons2/ex9')
+async def sandbox16(
+    session:AsyncSession = Depends(get_session) , 
+    min_price:Annotated[float|None , Query(min=1 , max = 99999999)] = None,
+    max_price:Annotated[float|None , Query(min=1 , max = 99999999)] = None,
+):
+    stmt = select(Product)
+    if min_price is not None : 
+        stmt = stmt.where(Product.price >= min_price)
+    if max_price is not None: 
+        stmt = stmt.where(Product.price <= max_price)
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lessons2/ex10')
+async def sandbox17(
+    session:AsyncSession = Depends(get_session) , 
+    q:Annotated[str|None , Query()] = None,
+):
+    stmt = select(Product)
+    if q is not None : 
+        stmt = stmt.where(Product.name.ilike(f'%{q}%'))
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
+
+@router.get('/lessons2/ex11')
+async def sandbox18(
+    session:AsyncSession = Depends(get_session) , 
+    page:Annotated[int , Query(min=1)]=1 , 
+    limit:Annotated[int , Query(min=1,max=100)]=10
+):
+    offset = (page-1) * limit
+    stmt = (
+        select(Product).offset(offset).limit(limit)
+    )
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return {
+        "page":page , 
+        "limit": limit , 
+        "length" : len(products) ,
+        "data": products,
+    }
 
