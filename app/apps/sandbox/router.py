@@ -215,3 +215,14 @@ async def sandbox18(
         "data": products,
     }
 
+@router.get('/lesson2/ex12')
+async def sandbox19(
+    session:AsyncSession=Depends(get_session) , 
+    q:Annotated[str , Query()]='' ,
+    ):
+    stmt = select(Product).order_by(Product.price.asc())
+    if q :
+        stmt = stmt.where(Product.name.ilike(f'%{q}%'))
+    res = await session.execute(stmt)
+    products = res.scalars().all()
+    return products
