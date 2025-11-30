@@ -5,7 +5,8 @@ from app.core.config import settings
 
 engine = create_async_engine(
     url=settings.ASYNC_DATABASE_URL , 
-    pool_pre_ping=True,
+    # pool_pre_ping=True,
+    pool_pre_ping=False,
     echo=True , 
     future=True)
 

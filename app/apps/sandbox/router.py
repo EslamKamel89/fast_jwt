@@ -1,8 +1,10 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.apps.sandbox.models import Category, Product
 from app.db.session import get_session
@@ -226,3 +228,39 @@ async def sandbox19(
     res = await session.execute(stmt)
     products = res.scalars().all()
     return products
+
+class CreateCategory(BaseModel):
+    name :str = Field(min_length=2 , max_length=10) 
+@router.post('/lesson3/ex1')
+async def sandbox20(
+    cat:CreateCategory , session:AsyncSession=Depends(get_session)  
+    ):
+    category = Category(**cat.model_dump())
+    session.add(category)
+    await session.flush()
+    await session.refresh(category)
+    await session.commit()
+    return category
+
+class CreateProduct(BaseModel):
+    name:str = Field(min_length=2 , max_length=100)
+    price:float 
+    categories_ids:list[int] = []
+@router.post('/lesson3/ex2')
+async def sandbox21(
+    payload:CreateProduct ,
+    session:AsyncSession = Depends(get_session) ,
+):
+    categories = (
+        await session.execute(select(Category).where(Category.id.in_(payload.categories_ids)))
+        ).scalars().all()
+    product = Product(name=payload.name , price=payload.price)
+    product.categories.extend(categories)
+    session.add(product)
+    await session.flush()
+    await session.refresh(product)
+    await session.commit()
+    stmt = select(Product).options(selectinload(Product.categories)).where(Product.id == product.id)
+    product = (await session.execute(stmt)).scalars().first()
+    return {"product":product }
+    
